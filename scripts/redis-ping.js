@@ -15,7 +15,7 @@ if (process.env.REDIS_URL) {
 
 client.ping()
   .then(res => {
-    console.log("Redis PING ->", res); // should print "PONG"
+    console.log("Redis PING ->", res);
     client.disconnect();
   })
   .catch(err => {

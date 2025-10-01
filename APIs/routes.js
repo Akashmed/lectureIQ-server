@@ -1,30 +1,34 @@
 const express = require('express');
 const router = express.Router();
 const { getDB } = require('../config/db');
+const { lectureQueue } = require('../jobs/queue');
 
-// GET all items
-router.get('/items', async (req, res) => {
-  try {
-    const db = getDB();
-    const items = await db.collection('items').find().toArray();
-    res.json("items");
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+// POST /lectures
+router.post("/lectures", async (req, res) => {
+  const { title, source_url, video_id } = req.body;
+  const db = getDB();
+
+  const lecture = {
+    title,
+    source_url,
+    video_id,
+    status: "pending",
+    created_at: new Date()
+  };
+
+  const result = await db.collection("lectures").insertOne(lecture);
+
+  // enqueue job
+  await lectureQueue.add("processLecture", {
+    lectureId: result.insertedId.toString(),
+    videoUrl: source_url
+  });
+
+  res.status(201).json({ message: "Lecture created", title, source_url, video_id });
 });
 
-// POST a new item
-router.post('/items', async (req, res) => {
-  try {
-    const db = getDB();
-    const newItem = req.body;
-    const result = await db.collection('items').insertOne(newItem);
-    res.json(result);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+router.get("/test", (req, res) => {
+  res.send("API is working");
 });
-
-// will add more routes here...
 
 module.exports = router;
